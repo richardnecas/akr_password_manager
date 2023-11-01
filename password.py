@@ -22,7 +22,7 @@ class Password:
         padded_password = padder.update(password.encode('utf-8')) + padder.finalize()
         
         hash_input = self.url + master_password
-        print(hashlib.sha256(hash_input.encode('utf-8')).hexdigest().encode('utf-8'))
+        #print(hashlib.sha256(hash_input.encode('utf-8')).hexdigest().encode('utf-8')) #to check the length of byted hash, parameter doesn't work for en/decryption
         cipher = Cipher(algorithms.AES(bytes.fromhex(hashlib.sha256(hash_input.encode('utf-8')).hexdigest())), modes.ECB())
         encryptor = cipher.encryptor()
         return encryptor.update(padded_password) + encryptor.finalize()

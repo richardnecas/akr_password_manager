@@ -5,6 +5,12 @@ from cryptography.hazmat.primitives import padding
 #from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
+class PasswordBlueprint:
+    def __init__(self, url, password):
+        self.url = url
+        self.password = password
+
+
 class Password:
     def __init__(self, url, password, previous_hash, master_password):
         self.url = url

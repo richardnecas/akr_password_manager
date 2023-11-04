@@ -1,5 +1,8 @@
+import integrity_manager
 import password
 from typing import List
+import file_manager
+from utils import AlgorithmModes
 
 passwords: List[password.Password] = []
 
@@ -52,3 +55,30 @@ def update_password_params(password_params: password.PasswordBlueprint, master_p
 
     cache_password = password.Password(cache_url, password_params.password, passwords[index].hash, master_password)
     passwords[index] = cache_password
+
+
+def database_encode():
+    dictionary_list = []
+    for dat in passwords:
+        cache_password = {
+            "url": dat.url,
+            "password": dat.password,
+            "previous_hash": dat.previous_hash,
+            "hash": dat.hash,
+            "timestamp": dat.timestamp
+        }
+        dictionary_list.append(cache_password)
+    return dictionary_list
+
+
+def database_decode(dictionary_list: [{}], master_password):
+    global passwords
+    cache_passwords: List[password.Password] = []
+    for dat in dictionary_list:
+        cache_password = password.Password(dat["url"], dat["password"], dat["previous_hash"], master_password)
+        cache_passwords.append(cache_password)
+    passwords = cache_passwords
+
+
+def save_database_to_file(algorithm_mode, key_length):
+    file_manager.write_file(integrity_manager.encrypt_database(database_encode(), algorithm_mode, key_length))

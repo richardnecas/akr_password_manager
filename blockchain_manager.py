@@ -2,7 +2,7 @@ import integrity_manager
 import password
 from typing import List
 import file_manager
-from utils import AlgorithmModes
+from utils import Algorithm
 
 passwords: List[password.Password] = []
 
@@ -31,17 +31,17 @@ def recount_blockchain_from_index(index):
 
     if index == 0:
         passwords[0].previous_hash = ""
-        passwords[0].calculate_hash()
+        passwords[0].hash = passwords[0].calculate_hash()
         previous_index = 0
         for i in range(len(passwords[2:])):
             passwords[i].previous_hash = passwords[previous_index].hash
-            passwords[i].calculate_hash()
+            passwords[i].hash = passwords[i].calculate_hash()
             previous_index += 1
     else:
         previous_index = index - 1
         for i in range(len(passwords[index:])):
             passwords[i].previous_hash = passwords[previous_index].hash
-            passwords[i].calculate_hash()
+            passwords[i].hash = passwords[i].calculate_hash()
             previous_index += 1
 
 
@@ -72,13 +72,17 @@ def database_encode():
 
 
 def database_decode(dictionary_list: [{}], master_password):
-    global passwords
     cache_passwords: List[password.Password] = []
     for dat in dictionary_list:
         cache_password = password.Password(dat["url"], dat["password"], dat["previous_hash"], master_password)
         cache_passwords.append(cache_password)
-    passwords = cache_passwords
+    return cache_passwords
 
 
-def save_database_to_file(algorithm_mode, key_length):
-    file_manager.write_file(integrity_manager.encrypt_database(database_encode(), algorithm_mode, key_length))
+def save_database_to_file(algorithm_mode, key_length, master_password):
+    file_manager.write_file(integrity_manager.encrypt_database(database_encode(), algorithm_mode, key_length, master_password), 'database.pkl')
+
+
+def load_database_from_file(algorithm_mode, key_length, master_password):
+    global passwords
+    passwords = database_decode(integrity_manager.decrypt_database(file_manager.open_file('database.pkl'), algorithm_mode, key_length, master_password), master_password)

@@ -18,7 +18,8 @@ metadata = {
     "key_length": 0,
     "login": "",
     "password_hash": "",
-    "random_number": 0
+    "random_number": 0,
+    "crc": 0
 }
 
 rsa_password = '3v4589gevnfhw44tp9wegh23'
@@ -28,7 +29,26 @@ def generate_number():
     return random.randint(111111, 999999)
 
 
+def run_integrity_check():
+    if check_blockchain() and check_crc() and check_hash():
+        return True
+    return False
+
+
 def check_blockchain(unchecked_list: List[password.Password]):
+    prev_hash = "0"
+    for block in unchecked_list:
+        if block.hash != block.calculate_hash() or block.previous_hash != prev_hash:
+            return False
+        prev_hash = block.hash
+    return True
+
+
+def check_crc():
+    return None
+
+
+def check_hash():
     return None
 
 
@@ -47,7 +67,7 @@ def prepare_metadata(master_password):
     return metadata_to_save
 
 
-def load_metadata(metadata_list: {}, master_password):
+def encode_metadata(metadata_list: {}, master_password):
     global metadata
     metadata["mode"] = metadata_list["mode"]
     metadata["key_length"] = metadata_list["key_length"]
@@ -72,15 +92,29 @@ def decrypt_random_number(encrypted_number: int, master_password):
 
 
 def encrypt_metadata(metadata_to_save: {}):
-    public_key = serialization.load_pem_public_key(file_manager.open_file(utils.FilePath.public), backend=default_backend())
-    return public_key.encrypt(metadata_to_save, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                                                             algorithm=hashes.SHA256(),
-                                                             label=None))
+    public_key = serialization.load_pem_public_key(file_manager.open_file(utils.FilePath.public.value), backend=default_backend())
+    return public_key.encrypt(json.dumps(metadata_to_save).encode('utf-8'), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                                                                                         algorithm=hashes.SHA256(),
+                                                                                         label=None))
+
+
+def decrypt_metadata(metadata_from_file):
+    private_key = serialization.load_pem_private_key(file_manager.open_file(utils.FilePath.private.value),
+                                                     backend=default_backend(),
+                                                     password=len(rsa_password).to_bytes(byteorder='big', length=16))
+    decrypted_message = private_key.decrypt(metadata_from_file, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                                                                             algorithm=hashes.SHA256(),
+                                                                             label=None))
+    return json.loads(decrypted_message.decode('utf-8'))
 
 
 def save_metadata(master_password):
     metadata_to_save = prepare_metadata(master_password)
-    file_manager.write_file(encrypt_metadata(metadata_to_save), utils.FilePath.metadata)
+    file_manager.write_file(encrypt_metadata(metadata_to_save), utils.FilePath.metadata.value)
+
+
+def load_metadata(master_password):
+    encode_metadata(decrypt_metadata(file_manager.open_file(utils.FilePath.metadata.value)), master_password)
 
 
 def generate_rsa_keys():
@@ -89,11 +123,15 @@ def generate_rsa_keys():
                                                       format=serialization.PrivateFormat.TraditionalOpenSSL,
                                                       encryption_algorithm=serialization.BestAvailableEncryption(
                                                           len(rsa_password).to_bytes(byteorder='big', length=16))),
-                            utils.FilePath.private)
+                            utils.FilePath.private.value)
     file_manager.write_file(private_key.public_key().public_bytes(encoding=serialization.Encoding.PEM,
                                                                   format=serialization.PublicFormat.SubjectPublicKeyInfo),
-                            utils.FilePath.public)
+                            utils.FilePath.public.value)
 
 
+generate_rsa_keys()
 metadata["random_number"] = generate_number()
+print(metadata["random_number"])
 save_metadata("silneheslo")
+load_metadata("silneheslo")
+print(metadata)

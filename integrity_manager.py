@@ -1,8 +1,10 @@
+import base64
 import hashlib
+import os
 from typing import List
 import password
 import utils
-import random
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding, serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -10,23 +12,31 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 import file_manager
 import json
-
-#crc, hash, recount blockchainu
+import time
+from logger import make_log, LogMessage
 
 metadata = {
     "mode": 0,
     "key_length": 0,
     "login": "",
     "password_hash": "",
-    "random_number": 0,
+    "random_number": bytes(0), #in b64
     "crc": 0
+    #"salt": bytes(0)
 }
 
-rsa_password = '3v4589gevnfhw44tp9wegh23'
+rsa_password = [int(format(ord('d'))) ^ 1, int(format(ord('#'))) ^ 2, int(format(ord('R'))) ^ 3, int(format(ord('2'))) ^ 4,
+                int(format(ord('O'))) ^ 5, int(format(ord('x'))) ^ 6, int(format(ord('d'))) ^ 7, int(format(ord('T'))) ^ 8]
+print(rsa_password)
+count = 1
+for dat in rsa_password:
+    out = dat ^ count
+    print(chr(out))
+    count += 1
 
 
-def generate_number():
-    return random.randint(111111, 999999)
+def generate_number(byte_length):
+    return os.urandom(byte_length)
 
 
 def run_integrity_check():
@@ -35,8 +45,17 @@ def run_integrity_check():
     return False
 
 
+def derive_key(master_password, key_length, salt):
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
+                     length=key_length,
+                     salt=salt,
+                     iterations=100000,
+                     backend=default_backend())
+    return kdf.derive(master_password.encode('utf-8'))
+
+
 def check_blockchain(unchecked_list: List[password.Password]):
-    prev_hash = "0"
+    prev_hash = ""
     for block in unchecked_list:
         if block.hash != block.calculate_hash() or block.previous_hash != prev_hash:
             return False
@@ -60,35 +79,44 @@ def decrypt_database(encrypted_database, algorithm, key_length, master_password)
     return None
 
 
+def aes_gcm_encrypt(database: [{}], key_length, master_password):
+    salt = generate_number(16)
+    nonce = generate_number(24)
+
+    padder = padding.PKCS7(128).padder()
+    padded_database = padder.update(database) + padder.finalize()
+
+    cipher = Cipher(algorithms.AES(derive_key(master_password, key_length, salt)), modes.GCM(nonce), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    return [encryptor.update(padded_database) + encryptor.finalize(), nonce, salt]
+
+
+
+
 def prepare_metadata(master_password):
-    saved_rnd_number = int(metadata["random_number"])
     metadata_to_save = metadata
-    metadata_to_save["random_number"] = encrypt_random_number(saved_rnd_number, master_password)
+    metadata_to_save["random_number"] = encrypt_random_number(generate_number(32), master_password)
     return metadata_to_save
 
 
 def encode_metadata(metadata_list: {}, master_password):
     global metadata
-    metadata["mode"] = metadata_list["mode"]
-    metadata["key_length"] = metadata_list["key_length"]
-    metadata["login"] = metadata_list["login"]
-    metadata["password_hash"] = metadata_list["password_hash"]
+    metadata = metadata_list
     metadata["random_number"] = decrypt_random_number(metadata_list["random_number"], master_password)
 
 
-def encrypt_random_number(rnd_number: int, master_password):
-    bytes_number = rnd_number.to_bytes(length=16, byteorder='big')
+def encrypt_random_number(rnd_number, master_password):
+    print(rnd_number)
     cipher = Cipher(algorithms.AES(bytes.fromhex(hashlib.sha256(master_password.encode('utf-8')).hexdigest())), modes.ECB())
     encryptor = cipher.encryptor()
-    return int.from_bytes(encryptor.update(bytes_number) + encryptor.finalize(), byteorder='big')
+    return base64.b64encode(encryptor.update(rnd_number) + encryptor.finalize()).decode('utf-8')
 
 
-def decrypt_random_number(encrypted_number: int, master_password):
-    bytes_number = encrypted_number.to_bytes(length=16, byteorder='big')
+def decrypt_random_number(encrypted_number, master_password):
     cipher = Cipher(algorithms.AES(bytes.fromhex(hashlib.sha256(master_password.encode('utf-8')).hexdigest())), modes.ECB())
     decryptor = cipher.decryptor()
-    decrypted_number = decryptor.update(bytes_number) + decryptor.finalize()
-    return int.from_bytes(decrypted_number, byteorder='big')
+    return base64.b64encode(decryptor.update(base64.b64decode(encrypted_number)) + decryptor.finalize())
 
 
 def encrypt_metadata(metadata_to_save: {}):
@@ -109,8 +137,7 @@ def decrypt_metadata(metadata_from_file):
 
 
 def save_metadata(master_password):
-    metadata_to_save = prepare_metadata(master_password)
-    file_manager.write_file(encrypt_metadata(metadata_to_save), utils.FilePath.metadata.value)
+    file_manager.write_file(encrypt_metadata(prepare_metadata(master_password)), utils.FilePath.metadata.value)
 
 
 def load_metadata(master_password):
@@ -129,9 +156,15 @@ def generate_rsa_keys():
                             utils.FilePath.public.value)
 
 
+make_log(LogMessage.app_started.value)
+time1 = time.time()
+make_log(LogMessage.encryption_start.value)
 generate_rsa_keys()
-metadata["random_number"] = generate_number()
-print(metadata["random_number"])
 save_metadata("silneheslo")
+make_log("Encryption ended")
 load_metadata("silneheslo")
+make_log(LogMessage.decryption_finish.value)
+time2 = time.time()
 print(metadata)
+print(base64.b64decode(metadata["random_number"]))
+print(time2-time1)

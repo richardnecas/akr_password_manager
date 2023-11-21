@@ -1,3 +1,5 @@
+import json
+
 import integrity_manager
 import password
 from typing import List
@@ -71,6 +73,10 @@ def database_encode():
     return dictionary_list
 
 
+def json_bd():
+    return json.dumps(passwords)
+
+
 def database_decode(dictionary_list: [{}], master_password):
     cache_passwords: List[password.Password] = []
     for dat in dictionary_list:
@@ -86,3 +92,8 @@ def save_database_to_file(algorithm_mode, key_length, master_password):
 def load_database_from_file(algorithm_mode, key_length, master_password):
     global passwords
     passwords = database_decode(integrity_manager.decrypt_database(file_manager.open_file('database.pkl'), algorithm_mode, key_length, master_password), master_password)
+
+
+#pass1 = password.Password("web.cz", password, "", "totojesilneheslo")
+#passwords.append(pass1)
+#json_bd()

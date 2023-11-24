@@ -9,12 +9,12 @@ from utils import Algorithm
 passwords: List[password.Password] = []
 
 
-def add_password(password_params: password.PasswordBlueprint, master_password):
+def add_password(password_params: password.PasswordBlueprint):
     if len(passwords) == 0:
-        new_password = password.Password(password_params.url, password_params.password, "", master_password)
+        new_password = password.Password(password_params.url, password_params.password, "")
         passwords.append(new_password)
     else:
-        new_password = password.Password(password_params.url, password_params.password, passwords[-1].hash, master_password)
+        new_password = password.Password(password_params.url, password_params.password, passwords[-1].hash)
         passwords.append(new_password)
 
 
@@ -23,8 +23,8 @@ def delete_password(index):
     recount_blockchain_from_index(deleted)
 
 
-def change_password(password_params, master_password, index):
-    update_password_params(password_params, master_password, index)
+def change_password(password_params, index):
+    update_password_params(password_params, index)
     recount_blockchain_from_index(index)
 
 
@@ -47,7 +47,7 @@ def recount_blockchain_from_index(index):
             previous_index += 1
 
 
-def update_password_params(password_params: password.PasswordBlueprint, master_password, index):
+def update_password_params(password_params: password.PasswordBlueprint, index):
     global passwords
 
     if password_params.url == "":
@@ -55,7 +55,7 @@ def update_password_params(password_params: password.PasswordBlueprint, master_p
     else:
         cache_url = password_params.url
 
-    cache_password = password.Password(cache_url, password_params.password, passwords[index].hash, master_password)
+    cache_password = password.Password(cache_url, password_params.password, passwords[index].hash)
     passwords[index] = cache_password
 
 
@@ -70,30 +70,30 @@ def database_encode():
             "timestamp": dat.timestamp
         }
         dictionary_list.append(cache_password)
-    return dictionary_list
-
-
-def json_bd():
-    return json.dumps(passwords)
+    return json.dumps(dictionary_list).encode('utf-8')
 
 
 def database_decode(dictionary_list: [{}], master_password):
     cache_passwords: List[password.Password] = []
     for dat in dictionary_list:
-        cache_password = password.Password(dat["url"], dat["password"], dat["previous_hash"], master_password)
+        cache_password = password.Password(dat["url"], dat["password"], dat["previous_hash"])
         cache_passwords.append(cache_password)
     return cache_passwords
 
 
 def save_database_to_file(algorithm_mode, key_length, master_password):
-    file_manager.write_file(integrity_manager.encrypt_database(database_encode(), algorithm_mode, key_length, master_password), 'database.pkl')
+    file_manager.write_file(integrity_manager.encrypt_database(database_encode(), algorithm_mode, key_length, master_password), 'database.dat')
 
 
-def load_database_from_file(algorithm_mode, key_length, master_password):
+def load_database_from_file(master_password):
     global passwords
-    passwords = database_decode(integrity_manager.decrypt_database(file_manager.open_file('database.pkl'), algorithm_mode, key_length, master_password), master_password)
+    passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file('database.dat'), master_password).decode('utf-8')), master_password)
 
 
-#pass1 = password.Password("web.cz", password, "", "totojesilneheslo")
-#passwords.append(pass1)
-#json_bd()
+'''pass1 = password.Password("web.cz", "password", "")
+pass2 = password.Password("stranka.org", "heslo", pass1.hash)
+passwords.append(pass1)
+passwords.append(pass2)'''
+#save_database_to_file(0, 32, "silneheslo")
+load_database_from_file('silneheslo')
+print(database_encode())

@@ -19,8 +19,7 @@ def add_password(password_params: password.PasswordBlueprint):
 
 
 def delete_password(index):
-    deleted = passwords.pop(index)
-    recount_blockchain_from_index(deleted)
+    recount_blockchain_from_index(passwords.pop(index))
 
 
 def change_password(password_params, index):
@@ -90,10 +89,10 @@ def load_database_from_file(master_password):
     passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file('database.dat'), master_password).decode('utf-8')), master_password)
 
 
-'''pass1 = password.Password("web.cz", "password", "")
+pass1 = password.Password("web.cz", "password", "")
 pass2 = password.Password("stranka.org", "heslo", pass1.hash)
 passwords.append(pass1)
-passwords.append(pass2)'''
-#save_database_to_file(0, 32, "silneheslo")
+passwords.append(pass2)
+save_database_to_file(0, 32, "silneheslo")
 load_database_from_file('silneheslo')
 print(database_encode())

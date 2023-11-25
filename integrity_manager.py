@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives import padding as kktina
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.backends import default_backend
+from cryptography.fernet import Fernet
 import file_manager
 import json
 import time
@@ -50,7 +51,7 @@ def derive_key(master_password, key_length, salt):
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(),
                      length=key_length,
                      salt=salt,
-                     iterations=100000,
+                     iterations=400000,
                      backend=default_backend())
     return kdf.derive(master_password.encode('utf-8'))
 
@@ -76,13 +77,14 @@ def encrypt_database(encoded_database: [{}], algorithm, key_length, master_passw
     global metadata
     if algorithm == 0:
         return_array = aes_gcm_encrypt(encoded_database, key_length, master_password)
+        metadata["nonce"] = return_array[2].hex()
+        metadata["tag"] = return_array[3].hex()
     elif algorithm == 1:
-        return
+        return_array = camellia_encrypt(encoded_database, key_length, master_password)
+        metadata["nonce"] = return_array[2].hex()
     else:
-        return
-    metadata["nonce"] = return_array[1].hex()
-    metadata["salt"] = return_array[2].hex()
-    metadata["tag"] = return_array[3].hex()
+        return_array = fernet_encrypt(encoded_database, key_length, master_password)
+    metadata["salt"] = return_array[1].hex()
     save_metadata()
     return return_array[0]
 
@@ -90,11 +92,11 @@ def encrypt_database(encoded_database: [{}], algorithm, key_length, master_passw
 def decrypt_database(encrypted_database, master_password):
     load_metadata()
     if metadata["mode"] == 0:
-        return aes_gcm_decrypt(encrypted_database, 32, bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
+        return aes_gcm_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
     elif metadata["mode"] == 1:
-        return
+        return camellia_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), master_password)
     else:
-        return
+        return fernet_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), master_password)
 
 
 def aes_gcm_encrypt(database: [{}], key_length, master_password):
@@ -103,14 +105,13 @@ def aes_gcm_encrypt(database: [{}], key_length, master_password):
 
     padder = kktina.PKCS7(128).padder()
     padded_database = padder.update(database) + padder.finalize()
-
     cipher = Cipher(algorithms.AES(derive_key(master_password, key_length, salt)), modes.GCM(nonce), backend=default_backend())
     encryptor = cipher.encryptor()
 
     encrypted_data = encryptor.update(padded_database) + encryptor.finalize()
 
     tag = encryptor.tag
-    return [encrypted_data, nonce, salt, tag]
+    return [encrypted_data, salt, nonce, tag]
 
 
 def aes_gcm_decrypt(database, key_length, salt, nonce, tag, master_password):
@@ -118,6 +119,36 @@ def aes_gcm_decrypt(database, key_length, salt, nonce, tag, master_password):
     decryptor = cipher.decryptor()
     unpadder = kktina.PKCS7(128).unpadder()
     return unpadder.update(decryptor.update(database) + decryptor.finalize()) + unpadder.finalize()
+
+
+def camellia_encrypt(database: [{}], key_length, master_password):
+    salt = generate_number(16)
+    nonce = generate_number(16)
+
+    padder = kktina.PKCS7(128).padder()
+    padded_database = padder.update(database) + padder.finalize()
+    cipher = Cipher(algorithms.Camellia(derive_key(master_password, key_length, salt)), modes.CBC(nonce), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    return [encryptor.update(padded_database) + encryptor.finalize(), salt, nonce]
+
+
+def camellia_decrypt(database, key_length, salt, nonce, master_password):
+    cipher = Cipher(algorithms.Camellia(derive_key(master_password, key_length, salt)), modes.CBC(nonce), backend=default_backend())
+    decryptor = cipher.decryptor()
+    unpadder = kktina.PKCS7(128).unpadder()
+    return unpadder.update(decryptor.update(database) + decryptor.finalize()) + unpadder.finalize()
+
+
+def fernet_encrypt(database: [{}], key_length, master_password):
+    salt = generate_number(16)
+    f = Fernet(base64.urlsafe_b64encode(derive_key(master_password, key_length, salt)))
+    return [f.encrypt(database), salt]
+
+
+def fernet_decrypt(database, key_length, salt, master_password):
+    f = Fernet(base64.urlsafe_b64encode(derive_key(master_password, key_length, salt)))
+    return f.decrypt(database)
 
 
 def encrypt_metadata(metadata_to_save: {}):
@@ -159,11 +190,3 @@ def generate_rsa_keys():
                             utils.FilePath.public.value)
 
 
-'''generate_rsa_keys()
-rnd_num = generate_number(32).hex()
-print(rnd_num)
-metadata["nonce"] = rnd_num
-save_metadata()
-load_metadata()
-print(metadata)
-print(bytes.fromhex(metadata["nonce"]))'''

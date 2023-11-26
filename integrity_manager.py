@@ -7,12 +7,13 @@ import utils
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives import padding as kktina
+from cryptography.hazmat.primitives import padding as sym_padding
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 import file_manager
 import json
+import binascii
 import time
 from logger import make_log, LogMessage
 
@@ -24,7 +25,8 @@ metadata = {
     "nonce": "",
     "crc": 0,
     "salt": "",
-    "tag": ""
+    "tag": "",
+    "hash_stamp": ""
 }
 
 rsa_password = [int(format(ord('d'))) ^ 1, int(format(ord('#'))) ^ 2, int(format(ord('R'))) ^ 3, int(format(ord('2'))) ^ 4,
@@ -41,8 +43,8 @@ def generate_number(byte_length):
     return os.urandom(byte_length)
 
 
-def run_integrity_check():
-    if check_blockchain() and check_crc() and check_hash():
+def run_integrity_check(encoded_database, passwords):
+    if check_blockchain(passwords) and check_crc(encoded_database) and check_hash(encoded_database):
         return True
     return False
 
@@ -65,24 +67,34 @@ def check_blockchain(unchecked_list: List[password.Password]):
     return True
 
 
-def check_crc():
-    return None
+def check_crc(data):
+    if count_crc(data) == metadata["crc"]:
+        return True
+    return False
 
 
-def check_hash():
-    return None
+def count_crc(data):
+    return binascii.crc32(data) & 0xffffffff
+
+
+def check_hash(data):
+    if hashlib.sha256(data).hexdigest() == metadata["hash_stamp"]:
+        return True
+    return False
 
 
 def encrypt_database(encoded_database: [{}], algorithm, key_length, master_password):
     global metadata
+    metadata["crc"] = count_crc(encoded_database)
+    metadata["hash_stamp"] = hashlib.sha256(encoded_database).hexdigest()
     if algorithm == 0:
         return_array = aes_gcm_encrypt(encoded_database, key_length, master_password)
         metadata["nonce"] = return_array[2].hex()
         metadata["tag"] = return_array[3].hex()
-    elif algorithm == 1:
+    if algorithm == 1:
         return_array = camellia_encrypt(encoded_database, key_length, master_password)
         metadata["nonce"] = return_array[2].hex()
-    else:
+    if algorithm == 2:
         return_array = fernet_encrypt(encoded_database, key_length, master_password)
     metadata["salt"] = return_array[1].hex()
     save_metadata()
@@ -93,9 +105,9 @@ def decrypt_database(encrypted_database, master_password):
     load_metadata()
     if metadata["mode"] == 0:
         return aes_gcm_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
-    elif metadata["mode"] == 1:
+    if metadata["mode"] == 1:
         return camellia_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), master_password)
-    else:
+    if metadata["mode"] == 2:
         return fernet_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), master_password)
 
 
@@ -103,7 +115,7 @@ def aes_gcm_encrypt(database: [{}], key_length, master_password):
     salt = generate_number(16)
     nonce = generate_number(24)
 
-    padder = kktina.PKCS7(128).padder()
+    padder = sym_padding.PKCS7(128).padder()
     padded_database = padder.update(database) + padder.finalize()
     cipher = Cipher(algorithms.AES(derive_key(master_password, key_length, salt)), modes.GCM(nonce), backend=default_backend())
     encryptor = cipher.encryptor()
@@ -117,7 +129,7 @@ def aes_gcm_encrypt(database: [{}], key_length, master_password):
 def aes_gcm_decrypt(database, key_length, salt, nonce, tag, master_password):
     cipher = Cipher(algorithms.AES(derive_key(master_password, key_length, salt)), modes.GCM(nonce, tag), backend=default_backend())
     decryptor = cipher.decryptor()
-    unpadder = kktina.PKCS7(128).unpadder()
+    unpadder = sym_padding.PKCS7(128).unpadder()
     return unpadder.update(decryptor.update(database) + decryptor.finalize()) + unpadder.finalize()
 
 
@@ -125,7 +137,7 @@ def camellia_encrypt(database: [{}], key_length, master_password):
     salt = generate_number(16)
     nonce = generate_number(16)
 
-    padder = kktina.PKCS7(128).padder()
+    padder = sym_padding.PKCS7(128).padder()
     padded_database = padder.update(database) + padder.finalize()
     cipher = Cipher(algorithms.Camellia(derive_key(master_password, key_length, salt)), modes.CBC(nonce), backend=default_backend())
     encryptor = cipher.encryptor()
@@ -136,7 +148,7 @@ def camellia_encrypt(database: [{}], key_length, master_password):
 def camellia_decrypt(database, key_length, salt, nonce, master_password):
     cipher = Cipher(algorithms.Camellia(derive_key(master_password, key_length, salt)), modes.CBC(nonce), backend=default_backend())
     decryptor = cipher.decryptor()
-    unpadder = kktina.PKCS7(128).unpadder()
+    unpadder = sym_padding.PKCS7(128).unpadder()
     return unpadder.update(decryptor.update(database) + decryptor.finalize()) + unpadder.finalize()
 
 

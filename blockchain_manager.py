@@ -72,10 +72,15 @@ def database_encode():
     return json.dumps(dictionary_list).encode('utf-8')
 
 
-def database_decode(dictionary_list: [{}], master_password):
+def database_decode(dictionary_list: [{}]):
     cache_passwords: List[password.Password] = []
     for dat in dictionary_list:
-        cache_password = password.Password(dat["url"], dat["password"], dat["previous_hash"])
+        cache_password = password.Password("", "", "")
+        cache_password.hash = dat["hash"]
+        cache_password.previous_hash = dat["previous_hash"]
+        cache_password.url = dat["url"]
+        cache_password.password = dat["password"]
+        cache_password.timestamp = dat["timestamp"]
         cache_passwords.append(cache_password)
     return cache_passwords
 
@@ -86,13 +91,14 @@ def save_database_to_file(algorithm_mode, key_length, master_password):
 
 def load_database_from_file(master_password):
     global passwords
-    passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file('database.dat'), master_password).decode('utf-8')), master_password)
+    passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file('database.dat'), master_password).decode('utf-8')))
+    return integrity_manager.run_integrity_check(database_encode(), passwords)
 
 
 pass1 = password.Password("web.cz", "password", "")
-pass2 = password.Password("stranka.org", "heslo", pass1.hash)
 passwords.append(pass1)
+pass2 = password.Password("stranka.org", "heslo", passwords[0].hash)
 passwords.append(pass2)
 save_database_to_file(0, 32, "silneheslo")
-load_database_from_file('silneheslo')
+print(load_database_from_file('silneheslo'))
 print(database_encode())

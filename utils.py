@@ -3,8 +3,8 @@ from enum import Enum
 
 class Algorithm(Enum):
     AES = 0
-    CFB = 1
-    GCM = 2
+    Camelia = 1
+    Fernet = 2
 
 
 class KeyLength(Enum):

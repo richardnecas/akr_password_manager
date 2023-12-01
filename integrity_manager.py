@@ -46,6 +46,14 @@ for dat in rsa_password:
     count += 1'''
 
 
+def get_mode():
+    return metadata["mode"]
+
+
+def get_key_length():
+    return metadata["key_length"]
+
+
 def set_mode(mode):
     metadata["mode"] = mode
 
@@ -56,6 +64,10 @@ def set_key_length(key_length):
 
 def set_login(login):
     metadata["login"] = login
+
+
+def get_login():
+    return metadata["login"]
 
 
 def set_password_hash(login, pwd):
@@ -152,7 +164,7 @@ def encrypt_database(encoded_database: [{}]):
 
 
 def decrypt_database(encrypted_database, master_password):
-    load_metadata()
+    #load_metadata()
     if metadata["mode"] == 0:
         return aes_gcm_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
     if metadata["mode"] == 1:

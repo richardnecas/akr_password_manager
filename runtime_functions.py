@@ -15,6 +15,10 @@ def set_key_length(key_length):
     integrity_manager.set_key_length(key_length)
 
 
+def get_login():
+    return integrity_manager.get_login()
+
+
 def add_password(new_pass):
     blockchain_manager.add_password(new_pass)
 
@@ -27,14 +31,20 @@ def change_password(new_pass, index):
     blockchain_manager.change_password(new_pass, index)
 
 
+def check_params():
+    return integrity_manager.check_params()
+
+
+def change_next_session_key(master_password):
+    integrity_manager.change_next_session_key(master_password)
+
+
 def save_database():
-    if not integrity_manager.check_params():
-        integrity_manager.change_next_session_key(input("Enter master password "))
     blockchain_manager.save_database_to_file()
 
 
 def load_database(master_password):
-    return load_database(master_password)
+    return blockchain_manager.load_database_from_file(master_password)
 
 
 def set_new_user(login, password):
@@ -62,5 +72,29 @@ def load_metadata():
     integrity_manager.load_metadata()
 
 
-def app_innit():
-    return
+def set_params(text):
+    if text == 'AES':
+        integrity_manager.set_mode(0)
+    elif text == 'Camelia':
+        integrity_manager.set_mode(1)
+    elif text == 'Fernet':
+        integrity_manager.set_mode(2)
+        integrity_manager.set_key_length(32)
+    elif text == '128':
+        integrity_manager.set_key_length(16)
+    elif text == '192':
+        integrity_manager.set_key_length(24)
+    elif text == '256':
+        integrity_manager.set_key_length(32)
+
+
+def get_mode():
+    return integrity_manager.get_mode()
+
+
+def get_key_length():
+    return integrity_manager.get_key_length()
+
+
+def generate_next_session_key(master_password):
+    integrity_manager.generate_next_session_key(master_password)

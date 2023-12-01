@@ -87,8 +87,6 @@ def database_decode(dictionary_list: [{}]):
 
 
 def save_database_to_file():
-    if not integrity_manager.check_params():
-        integrity_manager.change_next_session_key(input("Enter master password\n"))
     file_manager.write_file(integrity_manager.encrypt_database(database_encode()), 'database.dat')
 
 
@@ -98,7 +96,7 @@ def load_database_from_file(master_password):
     return integrity_manager.run_integrity_check(database_encode(), passwords)
 
 
-integrity_manager.generate_next_session_key('silneheslo')
+'''integrity_manager.generate_next_session_key('silneheslo')
 pass1 = password.Password("web.cz", "password", "")
 passwords.append(pass1)
 pass2 = password.Password("stranka.org", "heslo", passwords[0].hash)
@@ -112,4 +110,4 @@ add_password(pass5)
 integrity_manager.set_mode(0)
 integrity_manager.set_key_length(32)
 save_database_to_file()
-print(load_database_from_file('silneheslo'))
+print(load_database_from_file('silneheslo'))'''

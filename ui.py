@@ -1,11 +1,13 @@
+import os
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QListWidget, QListWidgetItem, QDialog, QLabel, \
-    QLineEdit, QVBoxLayout, QWidget, QHBoxLayout, QDesktopWidget
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+    QLineEdit, QVBoxLayout, QWidget, QHBoxLayout, QDesktopWidget, QGridLayout
+from PyQt5.QtCore import Qt, QSize, pyqtSignal, QCoreApplication
+
+import blockchain_manager
 import runtime_functions
 from password import PasswordBlueprint
 from PyQt5.QtGui import QFont, QPixmap
-import blockchain_manager
 
 button_font = QFont("Calibri")
 button_font.setPointSize(13)
@@ -16,6 +18,8 @@ item_font.setPointSize(11)
 class Main(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.params = Parameters()
+        self.pwd_in = PasswordInput()
 
         self.resize(450, 600)  # setting main window size
 
@@ -59,6 +63,16 @@ class Main(QMainWindow):
         self.button3.clicked.connect(self.open_update_window)
         self.button3.setFont(button_font)
         self.buttons_layout.addWidget(self.button3)
+
+        self.button4 = QPushButton('Parameters', self)
+        self.button4.clicked.connect(self.open_param_window)
+        self.button4.setFont(button_font)
+        self.buttons_layout.addWidget(self.button4)
+
+        self.button5 = QPushButton('Save && Close', self)
+        self.button5.clicked.connect(self.save_database)
+        self.button5.setFont(button_font)
+        self.buttons_layout.addWidget(self.button5)
 
         self.layout.addLayout(self.buttons_layout)
 
@@ -104,8 +118,17 @@ class Main(QMainWindow):
         if not list_items: return
         for item in list_items:
             runtime_functions.delete_password(self.list_widget.row(item))
-            print(blockchain_manager.database_encode())
             self.list_widget.takeItem(self.list_widget.row(item))
+
+    def open_param_window(self):
+        self.params.show()
+
+    def save_database(self):
+        if not runtime_functions.check_params():
+            self.pwd_in.show()
+            return
+        runtime_functions.save_database()
+        QCoreApplication.instance().quit()
 
 
 class Login(QDialog):
@@ -137,11 +160,11 @@ class Login(QDialog):
         layout.addWidget(self.button_save)
 
     def save(self):
+        if os.path.isfile('metadata.dat'):
+            runtime_functions.load_metadata()
         login = self.url_field.text()
         password = self.password_field.text()
-        test = runtime_functions.authenticate_first_factor(login, password)
-        print(test)
-        if test:
+        if runtime_functions.authenticate_first_factor(login, password):
             self.pin_input = PinInput(password)
             self.pin_input.show()
 
@@ -262,7 +285,12 @@ class PinInput(QDialog):
         layout.addWidget(self.button_save)
 
     def save(self):
+        global main
         if runtime_functions.authenticate_second_factor(self.login_field.text(), self.password):
+            if os.path.isfile('database.dat'):
+                if runtime_functions.load_database(self.password):
+                    runtime_functions.generate_next_session_key(self.password)
+            main = Main()
             main.show()
             self.close()
             login_window.close()
@@ -300,9 +328,88 @@ class InputWindow(QDialog):
         self.close()
 
 
+class Parameters(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.btn1 = QPushButton('AES', self)
+        self.btn1.setFont(button_font)
+        self.btn1.clicked.connect(lambda: self.on_button_click(self.btn1.text()))
+        self.btn2 = QPushButton('Camelia', self)
+        self.btn2.setFont(button_font)
+        self.btn2.clicked.connect(lambda: self.on_button_click(self.btn2.text()))
+        self.btn3 = QPushButton('Fernet', self)
+        self.btn3.setFont(button_font)
+        self.btn3.clicked.connect(lambda: self.on_button_click(self.btn3.text()))
+        self.btn4 = QPushButton('128', self)
+        self.btn4.setFont(button_font)
+        self.btn4.clicked.connect(lambda: self.on_button_click(self.btn4.text()))
+        self.btn5 = QPushButton('192', self)
+        self.btn5.setFont(button_font)
+        self.btn5.clicked.connect(lambda: self.on_button_click(self.btn5.text()))
+        self.btn6 = QPushButton('256', self)
+        self.btn6.setFont(button_font)
+        self.btn6.clicked.connect(lambda: self.on_button_click(self.btn6.text()))
+
+        self.grid = QGridLayout()
+        self.grid.addWidget(self.btn1, 0, 0)
+        self.grid.addWidget(self.btn2, 0, 1)
+        self.grid.addWidget(self.btn3, 0, 2)
+        self.grid.addWidget(self.btn4, 1, 0)
+        self.grid.addWidget(self.btn5, 1, 1)
+        self.grid.addWidget(self.btn6, 1, 2)
+
+        if runtime_functions.get_mode() == 2:
+            self.btn4.setVisible(False)
+            self.btn5.setVisible(False)
+            self.btn6.setVisible(False)
+
+        self.setLayout(self.grid)
+
+    def on_button_click(self, text):
+        runtime_functions.set_params(text)
+        self.refresh()
+
+    def refresh(self):
+        if runtime_functions.get_mode() == 2:
+            self.btn4.setVisible(False)
+            self.btn5.setVisible(False)
+            self.btn6.setVisible(False)
+        else:
+            self.btn4.setVisible(True)
+            self.btn5.setVisible(True)
+            self.btn6.setVisible(True)
+
+
+class PasswordInput(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.label_password = QLabel('Parameters changed, enter password', self)
+        self.label_password.setFont(button_font)
+        self.password_field = QLineEdit(self)
+        self.password_field.setFont(button_font)
+
+        self.button_save = QPushButton('Save', self)
+        self.button_save.setFont(button_font)
+        self.button_save.clicked.connect(self.save)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label_password)
+        layout.addWidget(self.password_field)
+        layout.addWidget(self.button_save)
+
+    def save(self):
+        if runtime_functions.authenticate_first_factor(runtime_functions.get_login(), self.password_field.text()):
+            runtime_functions.change_next_session_key(self.password_field.text())
+            runtime_functions.save_database()
+            self.close()
+            QCoreApplication.instance().quit()
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    main = Main()
+    main = None
     login_window = Login()
     signup_window = Signup()
     welcome_window = WelcomeScreen()

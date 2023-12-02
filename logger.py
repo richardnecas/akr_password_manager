@@ -1,4 +1,4 @@
-import utils
+from utils import FilePath
 import time
 import datetime
 from enum import Enum
@@ -21,6 +21,6 @@ class LogMessage(Enum):
 
 
 def make_log(message):
-    with open(utils.FilePath.log.value, 'a') as to_log:
+    with open(FilePath.log.value, 'a') as to_log:
         to_log.write(message + " | " + str(datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')) + "\n")
     print(message)

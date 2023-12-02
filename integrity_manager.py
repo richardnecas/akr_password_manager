@@ -3,7 +3,7 @@ import hashlib
 import os
 from typing import List
 import password
-import utils
+from utils import FilePath
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import serialization, hashes
@@ -14,12 +14,11 @@ from cryptography.fernet import Fernet
 import file_manager
 import json
 import binascii
-import time
 from logger import make_log, LogMessage
 
 metadata = {
     "mode": 0,
-    "key_length": 0,
+    "key_length": 32,
     "login": "",
     "password_hash": "",
     "nonce": "",
@@ -164,7 +163,6 @@ def encrypt_database(encoded_database: [{}]):
 
 
 def decrypt_database(encrypted_database, master_password):
-    #load_metadata()
     if metadata["mode"] == 0:
         return aes_gcm_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
     if metadata["mode"] == 1:
@@ -223,14 +221,14 @@ def fernet_decrypt(database, key_length, salt, master_password):
 
 
 def encrypt_metadata(metadata_to_save: {}):
-    public_key = serialization.load_pem_public_key(file_manager.open_file(utils.FilePath.public.value), backend=default_backend())
+    public_key = serialization.load_pem_public_key(file_manager.open_file(FilePath.public.value), backend=default_backend())
     return public_key.encrypt(json.dumps(metadata_to_save).encode('utf-8'), padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
                                                                                          algorithm=hashes.SHA256(),
                                                                                          label=None))
 
 
 def decrypt_metadata(metadata_from_file):
-    private_key = serialization.load_pem_private_key(file_manager.open_file(utils.FilePath.private.value),
+    private_key = serialization.load_pem_private_key(file_manager.open_file(FilePath.private.value),
                                                      backend=default_backend(),
                                                      password=len(rsa_password).to_bytes(byteorder='big', length=16))
     decrypted_message = private_key.decrypt(metadata_from_file, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
@@ -241,12 +239,12 @@ def decrypt_metadata(metadata_from_file):
 
 def save_metadata():
     generate_rsa_keys()
-    file_manager.write_file(encrypt_metadata(metadata), utils.FilePath.metadata.value)
+    file_manager.write_file(encrypt_metadata(metadata), FilePath.metadata.value)
 
 
 def load_metadata():
     global metadata, old_params
-    metadata = decrypt_metadata(file_manager.open_file(utils.FilePath.metadata.value))
+    metadata = decrypt_metadata(file_manager.open_file(FilePath.metadata.value))
     old_params["mode"] = metadata["mode"]
     old_params["key_length"] = metadata["key_length"]
 
@@ -257,9 +255,7 @@ def generate_rsa_keys():
                                                       format=serialization.PrivateFormat.TraditionalOpenSSL,
                                                       encryption_algorithm=serialization.BestAvailableEncryption(
                                                           len(rsa_password).to_bytes(byteorder='big', length=16))),
-                            utils.FilePath.private.value)
+                            FilePath.private.value)
     file_manager.write_file(private_key.public_key().public_bytes(encoding=serialization.Encoding.PEM,
                                                                   format=serialization.PublicFormat.SubjectPublicKeyInfo),
-                            utils.FilePath.public.value)
-
-
+                            FilePath.public.value)

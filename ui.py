@@ -3,11 +3,10 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QListWidget, QListWidgetItem, QDialog, QLabel, \
     QLineEdit, QVBoxLayout, QWidget, QHBoxLayout, QDesktopWidget, QGridLayout
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QCoreApplication
-
-import blockchain_manager
 import runtime_functions
 from password import PasswordBlueprint
 from PyQt5.QtGui import QFont, QPixmap
+from utils import FilePath
 
 button_font = QFont("Calibri")
 button_font.setPointSize(13)
@@ -73,6 +72,14 @@ class Main(QMainWindow):
         self.button5.clicked.connect(self.save_database)
         self.button5.setFont(button_font)
         self.buttons_layout.addWidget(self.button5)
+
+        self.mode = QLabel(runtime_functions.get_mode_text(), self)
+        self.mode.setFont(button_font)
+        self.buttons_layout.addWidget(self.mode)
+
+        self.key_length = QLabel(str(runtime_functions.get_key_length() * 8), self)
+        self.key_length.setFont(button_font)
+        self.buttons_layout.addWidget(self.key_length)
 
         self.layout.addLayout(self.buttons_layout)
 
@@ -160,7 +167,7 @@ class Login(QDialog):
         layout.addWidget(self.button_save)
 
     def save(self):
-        if os.path.isfile('metadata.dat'):
+        if os.path.isfile(FilePath.metadata.value):
             runtime_functions.load_metadata()
         login = self.url_field.text()
         password = self.password_field.text()
@@ -190,6 +197,13 @@ class WelcomeScreen(QDialog):
         layout.addWidget(self.button_signup)
         layout.addWidget(self.label_login)
         layout.addWidget(self.button_login)
+
+        if os.path.isfile(FilePath.metadata.value):
+            self.label_signup.setVisible(False)
+            self.button_signup.setVisible(False)
+        else:
+            self.label_login.setVisible(False)
+            self.button_login.setVisible(False)
 
     def open_login_window(self):
         login_window.show()
@@ -287,7 +301,7 @@ class PinInput(QDialog):
     def save(self):
         global main
         if runtime_functions.authenticate_second_factor(self.login_field.text(), self.password):
-            if os.path.isfile('database.dat'):
+            if os.path.isfile(FilePath.database.value):
                 if runtime_functions.load_database(self.password):
                     runtime_functions.generate_next_session_key(self.password)
             main = Main()

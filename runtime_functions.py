@@ -92,6 +92,15 @@ def get_mode():
     return integrity_manager.get_mode()
 
 
+def get_mode_text():
+    if integrity_manager.get_mode() == 0:
+        return 'AES'
+    elif integrity_manager.get_mode() == 1:
+        return 'Camelia'
+    elif integrity_manager.get_mode() == 2:
+        return 'Fernet'
+
+
 def get_key_length():
     return integrity_manager.get_key_length()
 

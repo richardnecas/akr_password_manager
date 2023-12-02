@@ -92,5 +92,8 @@ def save_database_to_file():
 
 def load_database_from_file(master_password):
     global passwords
-    passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file(FilePath.database.value), master_password).decode('utf-8')))
+    try:
+        passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file(FilePath.database.value), master_password).decode('utf-8')))
+    except Exception:
+        return False
     return integrity_manager.run_integrity_check(database_encode(), passwords)

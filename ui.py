@@ -326,10 +326,17 @@ class PinInput(QDialog):
 
     def save(self):
         global main
+        global warning
         if runtime_functions.authenticate_second_factor(self.login_field.text(), self.password):
             if os.path.isfile(FilePath.database.value):
                 if runtime_functions.load_database(self.password):
                     runtime_functions.generate_next_session_key(self.password)
+                else:
+                    warning = Info('Database integrity compromised\nDatabase could not be loaded')
+                    warning.show()
+                    self.close()
+                    login_window.close()
+                    return
             main = Main()
             main.show()
             self.close()
@@ -454,6 +461,27 @@ class PasswordInput(QDialog):
             QCoreApplication.instance().quit()
 
 
+class Info(QDialog):
+    def __init__(self, text):
+        super().__init__()
+
+        self.setWindowTitle('Warning!')
+
+        self.message = QLabel(text, self)
+        self.message.setFont(button_font)
+
+        self.btn = QPushButton('I understand, close app', self)
+        self.btn.setFont(button_font)
+        self.btn.clicked.connect(self.close_window)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.message)
+        layout.addWidget(self.btn)
+
+    def close_window(self):
+        self.close()
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main = None
@@ -462,5 +490,6 @@ if __name__ == '__main__':
     welcome_window = WelcomeScreen()
     welcome_window.show()
     code_window = None
+    warning = None
 
     sys.exit(app.exec_())

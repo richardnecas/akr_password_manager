@@ -36,13 +36,19 @@ old_params = {
 next_session_key = bytes()
 
 rsa_password = [int(format(ord('d'))) ^ 1, int(format(ord('#'))) ^ 2, int(format(ord('R'))) ^ 3, int(format(ord('2'))) ^ 4,
-                int(format(ord('O'))) ^ 5, int(format(ord('x'))) ^ 6, int(format(ord('d'))) ^ 7, int(format(ord('T'))) ^ 8]
-'''print(rsa_password)
-count = 1
-for dat in rsa_password:
-    out = dat ^ count
-    print(chr(out))
-    count += 1'''
+                int(format(ord('O'))) ^ 5, int(format(ord('x'))) ^ 6, int(format(ord('d'))) ^ 7, int(format(ord('T'))) ^ 8,
+                int(format(ord('t'))) ^ 9, int(format(ord('V'))) ^ 10, int(format(ord('6'))) ^ 11, int(format(ord('q'))) ^ 12,
+                int(format(ord('a'))) ^ 13, int(format(ord('7'))) ^ 14, int(format(ord('B'))) ^ 15, int(format(ord('4'))) ^ 16]
+
+
+def get_rsa_pwd():
+    pwd = str()
+    count = 1
+    for dat in rsa_password:
+        out = dat ^ count
+        pwd += chr(out)
+        count += 1
+    return pwd
 
 
 def get_mode():
@@ -230,7 +236,7 @@ def encrypt_metadata(metadata_to_save: {}):
 def decrypt_metadata(metadata_from_file):
     private_key = serialization.load_pem_private_key(file_manager.open_file(FilePath.private.value),
                                                      backend=default_backend(),
-                                                     password=len(rsa_password).to_bytes(byteorder='big', length=16))
+                                                     password=derive_key(get_rsa_pwd(), 16, bytes(69420)))
     decrypted_message = private_key.decrypt(metadata_from_file, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
                                                                              algorithm=hashes.SHA256(),
                                                                              label=None))
@@ -254,7 +260,7 @@ def generate_rsa_keys():
     file_manager.write_file(private_key.private_bytes(encoding=serialization.Encoding.PEM,
                                                       format=serialization.PrivateFormat.TraditionalOpenSSL,
                                                       encryption_algorithm=serialization.BestAvailableEncryption(
-                                                          len(rsa_password).to_bytes(byteorder='big', length=16))),
+                                                          derive_key(get_rsa_pwd(), 16, bytes(69420)))),
                             FilePath.private.value)
     file_manager.write_file(private_key.public_key().public_bytes(encoding=serialization.Encoding.PEM,
                                                                   format=serialization.PublicFormat.SubjectPublicKeyInfo),

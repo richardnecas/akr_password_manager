@@ -1,2 +1,2 @@
 # Správce hesel
-to je pro zatím vše
+Už máme skoro hotovo lol

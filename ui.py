@@ -7,6 +7,7 @@ import runtime_functions
 from password import PasswordBlueprint
 from PyQt5.QtGui import QFont, QPixmap
 from utils import FilePath
+from logger import LogMessage, make_log
 
 button_font = QFont("Calibri")
 button_font.setPointSize(13)
@@ -137,6 +138,7 @@ class Main(QMainWindow):
             self.pwd_in.show()
             return
         runtime_functions.save_database()
+        make_log(LogMessage.app_close.value)
         QCoreApplication.instance().quit()
 
     def refresh_params(self):
@@ -327,20 +329,26 @@ class PinInput(QDialog):
     def save(self):
         global main
         global warning
+        make_log(LogMessage.authentication_try.value)
         if runtime_functions.authenticate_second_factor(self.login_field.text(), self.password):
+            make_log(LogMessage.authentication_successful.value)
             if os.path.isfile(FilePath.database.value):
                 if runtime_functions.load_database(self.password):
                     runtime_functions.generate_next_session_key(self.password)
                 else:
+                    make_log(LogMessage.failed_login.value)
                     warning = Info('Database integrity compromised\nDatabase could not be loaded')
                     warning.show()
                     self.close()
                     login_window.close()
                     return
+            make_log(LogMessage.successful_login.value)
             main = Main()
             main.show()
             self.close()
             login_window.close()
+        else:
+            make_log(LogMessage.authentication_failed.value)
 
 
 class InputWindow(QDialog):
@@ -458,6 +466,7 @@ class PasswordInput(QDialog):
             runtime_functions.change_next_session_key(self.password_field.text())
             runtime_functions.save_database()
             self.close()
+            make_log(LogMessage.app_close.value)
             QCoreApplication.instance().quit()
 
 
@@ -482,7 +491,15 @@ class Info(QDialog):
         self.close()
 
 
-if __name__ == '__main__':
+def run_app():
+    global main
+    global login_window
+    global signup_window
+    global code_window
+    global warning
+    if os.path.isfile(FilePath.log.value):
+        make_log(LogMessage.app_started.value)
+
     app = QApplication(sys.argv)
     main = None
     login_window = Login()
@@ -493,3 +510,7 @@ if __name__ == '__main__':
     warning = None
 
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    run_app()

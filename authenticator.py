@@ -1,8 +1,4 @@
-import sys
-
 from PyQt5.QtCore import QByteArray
-from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
-from PyQt5.QtGui import QPixmap
 import requests
 import hashlib
 from bs4 import BeautifulSoup

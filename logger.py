@@ -8,7 +8,7 @@ class LogMessage(Enum):
     password_create = 'Password created'
     password_delete = 'Password deleted'
     password_change = 'Password changed'
-    app_started = 'Application started'
+    app_started = '\nApplication started'
     successful_login = 'Log-in successful'
     failed_login = 'Failed log-in attempt'
     authentication_try = 'Sending authentication request'

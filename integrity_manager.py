@@ -152,6 +152,7 @@ def check_params():
 
 def encrypt_database(encoded_database: [{}]):
     global metadata
+    make_log(LogMessage.encryption_start.value)
     metadata["crc"] = count_crc(encoded_database)
     metadata["hash_stamp"] = hashlib.sha256(encoded_database).hexdigest()
     return_array = []

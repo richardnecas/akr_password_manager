@@ -20,6 +20,7 @@ class Main(QMainWindow):
         self.params = Parameters()
         self.pwd_in = PasswordInput()
 
+        self.setWindowTitle('Password Manager')
         self.resize(450, 600)  # setting main window size
 
         self.widget = QWidget()
@@ -73,13 +74,14 @@ class Main(QMainWindow):
         self.button5.setFont(button_font)
         self.buttons_layout.addWidget(self.button5)
 
-        self.mode = QLabel(runtime_functions.get_mode_text(), self)
-        self.mode.setFont(button_font)
-        self.buttons_layout.addWidget(self.mode)
+        self.padding = QLabel(self)
+        self.padding.setFixedHeight(80)
+        self.buttons_layout.addWidget(self.padding)
 
-        self.key_length = QLabel(str(runtime_functions.get_key_length() * 8), self)
-        self.key_length.setFont(button_font)
-        self.buttons_layout.addWidget(self.key_length)
+        self.parameters = QLabel(runtime_functions.get_mode_text() + ' | ' + str(runtime_functions.get_key_length() * 8), self)
+        self.parameters.setFont(button_font)
+        self.parameters.setFixedHeight(20)
+        self.buttons_layout.addWidget(self.parameters)
 
         self.layout.addLayout(self.buttons_layout)
 
@@ -137,6 +139,9 @@ class Main(QMainWindow):
         runtime_functions.save_database()
         QCoreApplication.instance().quit()
 
+    def refresh_params(self):
+        self.parameters.setText(runtime_functions.get_mode_text() + ' | ' + str(runtime_functions.get_key_length() * 8))
+
 
 class Login(QDialog):
     submitted = pyqtSignal(str, str)
@@ -144,6 +149,8 @@ class Login(QDialog):
     def __init__(self):
         super().__init__()
         self.pin_input = None
+
+        self.setWindowTitle('Log-in')
 
         self.label_login = QLabel('Login:', self)
         self.label_login.setFont(button_font)
@@ -179,6 +186,8 @@ class Login(QDialog):
 class WelcomeScreen(QDialog):
     def __init__(self):
         super().__init__()
+
+        self.setWindowTitle('Welcome!')
 
         self.label_signup = QLabel('First time here', self)
         self.label_signup.setFont(button_font)
@@ -219,6 +228,7 @@ class Signup(QDialog):
 
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Sign-up')
 
         self.label_login = QLabel('Login:', self)
         self.label_login.setFont(button_font)
@@ -247,13 +257,17 @@ class Signup(QDialog):
         password = self.password_field.text()
         if login != "" and password != "":
             runtime_functions.set_new_user(login, password)
+            self.close()
             code_window = Image(runtime_functions.get_code(login, password))
             code_window.show()
 
 
 class Image(QMainWindow):
     def __init__(self, image):
-        super().__init__()
+        super(Image, self).__init__()
+
+        self.setWindowTitle('Scan me!')
+        self.center()
 
         # Create a QLabel to display the image
         image_label = QLabel(self)
@@ -265,17 +279,27 @@ class Image(QMainWindow):
         self.close_button.setFont(button_font)
         self.close_button.clicked.connect(self.next)
 
+        self.label = QLabel('Scan with Google Authenticator', self)
+        self.label.setFont(button_font)
+
         # Set up the main window layout
         central_widget = QWidget(self)
         layout = QVBoxLayout(central_widget)
+        layout.addWidget(self.label, 0, Qt.AlignCenter)
         layout.addWidget(image_label)
         layout.addWidget(self.close_button)
         self.setCentralWidget(central_widget)
 
     def next(self):
+        runtime_functions.create_folder()
         login_window.show()
         self.close()
-        signup_window.close()
+
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
 class PinInput(QDialog):
@@ -283,6 +307,8 @@ class PinInput(QDialog):
         super().__init__()
 
         self.password = password
+
+        self.setWindowTitle('Enter pin')
 
         self.label_login = QLabel('6 digit pin:', self)
         self.label_login.setFont(button_font)
@@ -316,6 +342,8 @@ class InputWindow(QDialog):
     def __init__(self, url='', password=''):
         super().__init__()
 
+        self.setWindowTitle('')
+
         self.label_url = QLabel('URL:', self)
         self.label_url.setFont(button_font)
         self.url_field = QLineEdit(url, self)
@@ -345,6 +373,8 @@ class InputWindow(QDialog):
 class Parameters(QDialog):
     def __init__(self):
         super().__init__()
+
+        self.setWindowTitle('Set parameters')
 
         self.btn1 = QPushButton('AES', self)
         self.btn1.setFont(button_font)
@@ -383,6 +413,7 @@ class Parameters(QDialog):
     def on_button_click(self, text):
         runtime_functions.set_params(text)
         self.refresh()
+        main.refresh_params()
 
     def refresh(self):
         if runtime_functions.get_mode() == 2:
@@ -398,6 +429,8 @@ class Parameters(QDialog):
 class PasswordInput(QDialog):
     def __init__(self):
         super().__init__()
+
+        self.setWindowTitle('Enter password!')
 
         self.label_password = QLabel('Parameters changed, enter password', self)
         self.label_password.setFont(button_font)

@@ -1,6 +1,7 @@
 import blockchain_manager
 import integrity_manager
 import authenticator
+import file_manager
 
 
 def get_database():
@@ -107,3 +108,7 @@ def get_key_length():
 
 def generate_next_session_key(master_password):
     integrity_manager.generate_next_session_key(master_password)
+
+
+def create_folder():
+    file_manager.create_folder()

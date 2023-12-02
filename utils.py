@@ -2,8 +2,8 @@ from enum import Enum
 
 
 class FilePath(Enum):
-    private = 'private.pem'
-    public = 'public.pem'
-    metadata = 'metadata.dat'
-    log = 'log.dat'
-    database = 'database.dat'
+    private = './pmfiles/private.pem'
+    public = './pmfiles/public.pem'
+    metadata = './pmfiles/metadata.dat'
+    log = './pmfiles/log.dat'
+    database = './pmfiles/database.dat'

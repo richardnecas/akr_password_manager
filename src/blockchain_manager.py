@@ -58,7 +58,7 @@ def recount_blockchain_from_index(index):
 def update_password_params(password_params: password.PasswordBlueprint, index):
     global passwords
 
-    new_password = password.Password(password_params.url, password_params.password, passwords[index-1].hash)
+    new_password = password.Password(password_params.url, password_params.password, passwords[index - 1].hash)
     passwords[index] = new_password
 
 
@@ -97,7 +97,8 @@ def save_database_to_file():
 def load_database_from_file(master_password):
     global passwords
     try:
-        passwords = database_decode(json.loads(integrity_manager.decrypt_database(file_manager.open_file(FilePath.database.value), master_password).decode('utf-8')))
+        passwords = database_decode(json.loads(
+            integrity_manager.decrypt_database(file_manager.open_file(FilePath.database.value), master_password).decode('utf-8')))
         make_log(LogMessage.decryption_finish.value)
     except Exception:
         return False

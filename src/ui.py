@@ -79,7 +79,8 @@ class Main(QMainWindow):
         self.padding.setFixedHeight(80)
         self.buttons_layout.addWidget(self.padding)
 
-        self.parameters = QLabel(runtime_functions.get_mode_text() + ' | ' + str(runtime_functions.get_key_length() * 8), self)
+        self.parameters = QLabel(
+            runtime_functions.get_mode_text() + ' | ' + str(runtime_functions.get_key_length() * 8), self)
         self.parameters.setFont(button_font)
         self.parameters.setFixedHeight(20)
         self.buttons_layout.addWidget(self.parameters)

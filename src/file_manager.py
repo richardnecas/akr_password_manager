@@ -12,4 +12,4 @@ def write_file(encrypted_data, file_path):
 
 
 def create_folder():
-    os.makedirs('../pmfiles', exist_ok=True)
+    os.makedirs('./pmfiles', exist_ok=True)

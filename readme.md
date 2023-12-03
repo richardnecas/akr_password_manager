@@ -15,7 +15,7 @@ uložený správce hesel s dvoufaktorovou autentizací pomocí Google Authentica
 ## Spuštění
 Aplikace se spouští v "password_manager.py" bez dalších vstupních parametrů.
 ```Bash
-py ./src/password_manager.py
+py ./password_manager.py
 ```
 Pro nainstalování knihoven lze použít příkaz:
 ```Bash

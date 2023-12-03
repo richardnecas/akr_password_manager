@@ -15,14 +15,14 @@ item_font = QFont("Calibri")
 item_font.setPointSize(11)
 
 
-class Main(QMainWindow):
+class Main(QMainWindow):  # main application window
     def __init__(self):
         super().__init__()
         self.params = Parameters()
         self.pwd_in = PasswordInput()
 
         self.setWindowTitle('Password Manager')
-        self.resize(450, 600)  # setting main window size
+        self.resize(450, 600)
 
         self.widget = QWidget()
         self.setCentralWidget(self.widget)
@@ -31,7 +31,7 @@ class Main(QMainWindow):
         self.widget.setLayout(self.layout)
 
         self.list_widget = QListWidget(self)
-        self.list_widget.setIconSize(QSize(200, 50))  # Increase height of QListWidgetItem
+        self.list_widget.setIconSize(QSize(200, 50))
         self.list_widget.setSpacing(10)
         self.list_widget.setFont(item_font)
 
@@ -104,8 +104,8 @@ class Main(QMainWindow):
 
     def open_update_window(self):
         list_items = self.list_widget.selectedItems()
-        if list_items:  # Check if any item is selected
-            selected_item = list_items[0]  # Get the first selected item
+        if list_items:  # check if any item is selected
+            selected_item = list_items[0]  # get the first selected item
             index = self.list_widget.row(selected_item)
             pwd = runtime_functions.get_database()[index]
             url, password = pwd.url, pwd.password
@@ -146,7 +146,7 @@ class Main(QMainWindow):
         self.parameters.setText(runtime_functions.get_mode_text() + ' | ' + str(runtime_functions.get_key_length() * 8))
 
 
-class Login(QDialog):
+class Login(QDialog):  # login window
     submitted = pyqtSignal(str, str)
 
     def __init__(self):
@@ -186,7 +186,7 @@ class Login(QDialog):
             self.pin_input.show()
 
 
-class WelcomeScreen(QDialog):
+class WelcomeScreen(QDialog):  # welcome screen window
     def __init__(self):
         super().__init__()
 
@@ -210,7 +210,7 @@ class WelcomeScreen(QDialog):
         layout.addWidget(self.label_login)
         layout.addWidget(self.button_login)
 
-        if os.path.isfile(FilePath.metadata.value):
+        if os.path.isfile(FilePath.metadata.value):  # checks if it's the first time accessing the application
             self.label_signup.setVisible(False)
             self.button_signup.setVisible(False)
         else:
@@ -226,7 +226,7 @@ class WelcomeScreen(QDialog):
         self.close()
 
 
-class Signup(QDialog):
+class Signup(QDialog):  # window for signing up users
     submitted = pyqtSignal(str, str)
 
     def __init__(self):
@@ -254,7 +254,7 @@ class Signup(QDialog):
         layout.addWidget(self.password_field)
         layout.addWidget(self.button_save)
 
-    def save(self):
+    def save(self):  # sets new user and then displays the QR code
         global code_window
         login = self.login_field.text()
         password = self.password_field.text()
@@ -265,7 +265,7 @@ class Signup(QDialog):
             code_window.show()
 
 
-class Image(QMainWindow):
+class Image(QMainWindow):  # window for displaying the QR code
     def __init__(self, image):
         super(Image, self).__init__()
 
@@ -305,7 +305,7 @@ class Image(QMainWindow):
         self.move(qr.topLeft())
 
 
-class PinInput(QDialog):
+class PinInput(QDialog):  # popup window for authentication pin
     def __init__(self, password):
         super().__init__()
 
@@ -327,7 +327,7 @@ class PinInput(QDialog):
         layout.addWidget(self.login_field)
         layout.addWidget(self.button_save)
 
-    def save(self):
+    def save(self):  # if the authentication is valid tries to decrypt and load the database
         global main
         global warning
         make_log(LogMessage.authentication_try.value)
@@ -352,7 +352,7 @@ class PinInput(QDialog):
             make_log(LogMessage.authentication_failed.value)
 
 
-class InputWindow(QDialog):
+class InputWindow(QDialog):  # input window for adding or changing password
     submitted = pyqtSignal(str, str)
 
     def __init__(self, url='', password=''):
@@ -386,7 +386,7 @@ class InputWindow(QDialog):
         self.close()
 
 
-class Parameters(QDialog):
+class Parameters(QDialog):  # popup window for parameter change
     def __init__(self):
         super().__init__()
 
@@ -442,7 +442,7 @@ class Parameters(QDialog):
             self.btn6.setVisible(True)
 
 
-class PasswordInput(QDialog):
+class PasswordInput(QDialog):  # input window for when the parameters were changed and user has to re-enter their password
     def __init__(self):
         super().__init__()
 
@@ -471,7 +471,7 @@ class PasswordInput(QDialog):
             QCoreApplication.instance().quit()
 
 
-class Info(QDialog):
+class Info(QDialog):  # info window for when the database is compromised
     def __init__(self, text):
         super().__init__()
 
@@ -492,7 +492,7 @@ class Info(QDialog):
         self.close()
 
 
-def run_app():
+def run_app():  # main function
     global main
     global login_window
     global signup_window

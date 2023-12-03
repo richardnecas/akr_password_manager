@@ -62,7 +62,7 @@ def update_password_params(password_params: password.PasswordBlueprint, index):
     passwords[index] = new_password
 
 
-def database_encode():
+def database_encode():  # encodes database into dictionary array
     dictionary_list = []
     for dat in passwords:
         cache_password = {
@@ -76,7 +76,7 @@ def database_encode():
     return json.dumps(dictionary_list).encode('utf-8')
 
 
-def database_decode(dictionary_list: [{}]):
+def database_decode(dictionary_list: [{}]):  # decodes the loaded array into array of objects and assigns it to passwords array
     cache_passwords: List[password.Password] = []
     for dat in dictionary_list:
         cache_password = password.Password("", "", "")
@@ -94,7 +94,7 @@ def save_database_to_file():
     make_log(LogMessage.database_save.value)
 
 
-def load_database_from_file(master_password):
+def load_database_from_file(master_password):  # tries to load and decrypt the database
     global passwords
     try:
         passwords = database_decode(json.loads(

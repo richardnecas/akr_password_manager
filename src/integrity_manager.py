@@ -107,7 +107,7 @@ def derive_key(master_password, key_length, salt):
     return kdf.derive(master_password.encode('utf-8'))
 
 
-def generate_next_session_key(master_password):
+def generate_next_session_key(master_password):  # pre-generates encryption key for next session after loading
     global next_session_key
     metadata["salt"] = generate_number(16).hex()
     next_session_key = derive_key(master_password, old_params["key_length"], bytes.fromhex(metadata["salt"]))
@@ -138,19 +138,19 @@ def check_hash(data):
     return False
 
 
-def change_next_session_key(master_password):
+def change_next_session_key(master_password):  # changes pre-generated encryption key
     global next_session_key
     metadata["salt"] = generate_number(16).hex()
     next_session_key = derive_key(master_password, metadata["key_length"], bytes.fromhex(metadata["salt"]))
 
 
-def check_params():
+def check_params():  # checks if the parameters before saving are the same as they were during loading
     if metadata["mode"] != old_params["mode"] or metadata["key_length"] != old_params["key_length"]:
         return False
     return True
 
 
-def encrypt_database(encoded_database: [{}]):
+def encrypt_database(encoded_database: [{}]):  # encrypts the database and sets required parameters in metadata before saving them as well
     global metadata
     make_log(LogMessage.encryption_start.value)
     metadata["crc"] = count_crc(encoded_database)
@@ -169,7 +169,7 @@ def encrypt_database(encoded_database: [{}]):
     return return_array[0]
 
 
-def decrypt_database(encrypted_database, master_password):
+def decrypt_database(encrypted_database, master_password):  # decrypts the file using the algorithm in the metadata
     if metadata["mode"] == 0:
         return aes_gcm_decrypt(encrypted_database, metadata["key_length"], bytes.fromhex(metadata["salt"]), bytes.fromhex(metadata["nonce"]), bytes.fromhex(metadata["tag"]), master_password)
     if metadata["mode"] == 1:

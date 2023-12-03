@@ -30,7 +30,7 @@ souborům se nachází v "utils.py".
 ## 3. Spuštění programu
 Entry point se nachází v "password_manager.py". Funkce nemá žádné vstupní parametry.
 ```Bash
-py ./password_manager.py
+py ./src/password_manager.py
 ```
 V souborech je dále přiložen také .exe soubor ze kterého je aplikace spustitelná i bez příkazové řádky.
 ## 4. Seznam použitých knihoven

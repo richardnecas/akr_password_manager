@@ -17,4 +17,8 @@ Aplikace se spouští v "password_manager.py" bez dalších vstupních parametr�
 ```Bash
 py ./password_manager.py
 ```
+Pro nainstalování knihoven lze použít příkaz:
+```Bash
+pip install -r requirements.txt
+```
 Spuštění dále možné pomocí přiloženého executable souboru.

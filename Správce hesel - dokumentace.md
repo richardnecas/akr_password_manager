@@ -1,23 +1,23 @@
 # Správce hesel
 ## 1. Funkce programu
 ### 1.1 Vlastnosti programu
-Správce hesel umožnuje ukládata hesla v šifrované databázi s přístupem chráněným heslem a dvoufaktorovým ověřením pomocí
+Správce hesel umožnuje ukládat hesla v šifrované databázi s přístupem chráněným heslem a dvoufaktorovým ověřením pomocí
 Google Authenticator mobilní aplikace a webového API. Při prvním spuštění si uživatel vytvoří účet s loginem a heslem.
-Z těchtu údajů je nasledně vygenerován QR kód, který si uživatel naskenuje do aplikace Google Authenticator (dále jen 
-GA) kde se přidá generátor 6ti ciferného čísla pro tuto aplikaci. Následně je uživatel vyzván k přihlášení a pokud jsou
+Z těchtu údajů je následně vygenerován QR kód, který si uživatel naskenuje do aplikace Google Authenticator (dále jen 
+GA), kde se přidá generátor 6ti ciferného čísla pro tuto aplikaci. Následně je uživatel vyzván k přihlášení a pokud jsou
 přihlašovací údaje správné, tak je následně požadováno zadání bezpečnostního pinu z GA. Je-li autentizace tohoto pinu
 úspěšná, je rozšifrována databáze a provedeno její načtení a uživateli je umožněn přístup k datům uloženým v této 
 databázi. V tuto chvíli může uživatel provádět operace s uloženými hesly a nastavit parametry šifrování programu.
 Pokud došlo ke změně těchto parametrů, je uživatel vyzván k zadání přístupového hesla. Databáze je následně zašifrována,
-zašifrována jsou  metadata a vše je následně uloženo do složky "pmfiles". Při opětovném otevření probíhá vše stejně,
+zašifrována jsou metadata a vše je následně uloženo do složky "pmfiles". Při opětovném otevření probíhá vše stejně,
 jen se uživateli stačí pouze přihlásit.
 ### 1.2 Technické vlastnosti
 První ověření hesla probíhá porovnáním otisků vytvořených pomocí SHA-256 z loginu a hesla. Pro šifrování databáze
-si může uživatel vybrat ze 3 algoritmů: AES-GCM, Camellia-CBC a Fernet. Až na Fernet si uživatel může vybrat ze 3 délek klíčů
-a to 128, 192 a 256 bitů. Fernet pracuje s fixní délkou 256 bitů, proto je tedy uživateli odepřena možnosst tuto hondotu
-v případě použití této šifry nastavit. Metadata s potřebnými informacemi jsou šifrována pomocí 4096 bitového RSA, kde
-je soukormý klíč šifrován pomocí AES-CBC se 128 bitovým klíčem vyderivovaným ze statického hesla uloženého v programu
-s bitovým posunem.
+si může uživatel vybrat ze 3 algoritmů: AES-GCM, Camellia-CBC a Fernet. Až na Fernet si uživatel může vybrat ze 3 délek
+klíčů a to 128, 192 a 256 bitů. Fernet pracuje s fixní délkou 256 bitů, proto je tedy uživateli odepřena možnost tuto
+hondotu v případě použití této šifry nastavit. Metadata s potřebnými informacemi jsou šifrována pomocí 4096 bitového
+RSA, kde je soukormý klíč šifrován pomocí AES-CBC se 128 bitovým klíčem vyderivovaným ze statického hesla uloženého v
+programu s bitovým posunem.
 ## 2. Struktura programu
 Program se spouští ze souboru "password_manager.py" ve které se volá funkce spuštění a běhu GUI v souboru "ui.py".
 Mezi tímto frontendem a samotným backendem stojí "runtime_functions.py", který se chová jako interface mezi těmito

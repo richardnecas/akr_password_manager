@@ -9,8 +9,8 @@ proběhlé události (přístup do aplikace, k jednotlivým heslům, …) do log
 
 ## Řešení
 Tento repozitář obsahuje zdrojové kódy pro projekt do předmětu Aplikovaná kryptografie. Aplikace funguje jako lokálně
-uložený správce hesel s dvoufaktorovou autentizací pomocí Google Authenticator. 
-<br> Podrobný popis funkce obsahuje dokument "Správce hesel - dokumentace" spolu s vývojovým diagramem.
+uložený správce hesel s dvoufaktorovou autentizací pomocí Google Authenticator.<br>
+Podrobný popis funkce spolu s vývojovým diagramem obsahuje dokument "Správce hesel - dokumentace".
 
 ## Spuštění
 Aplikace se spouští v "password_manager.py" bez dalších vstupních parametrů.
@@ -21,4 +21,4 @@ Pro nainstalování knihoven lze použít příkaz:
 ```Bash
 pip install -r requirements.txt
 ```
-Spuštění dále možné pomocí přiloženého executable souboru.
+Spuštění je dále možné pomocí přiloženého executable souboru.

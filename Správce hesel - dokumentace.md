@@ -34,5 +34,9 @@ py ./password_manager.py
 ```
 V souborech je dále přiložen také .exe soubor ze kterého je aplikace spustitelná i bez příkazové řádky.
 ## 4. Seznam použitých knihoven
+Seznam použitých knihoven je obsažen v souboru "requirements.txt". Pro nainstalování knihoven lze použít příkaz:
+```Bash
+pip install -r requirements.txt
+```
 ## 5. Vývojový diagram
 ![Vývojový diagram](/img/Flow_chart.png)

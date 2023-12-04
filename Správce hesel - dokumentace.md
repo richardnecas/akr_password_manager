@@ -17,7 +17,13 @@ si může uživatel vybrat ze 3 algoritmů: AES-GCM, Camellia-CBC a Fernet. Až 
 klíčů a to 128, 192 a 256 bitů. Fernet pracuje s fixní délkou 256 bitů, proto je tedy uživateli odepřena možnost tuto
 hondotu v případě použití této šifry nastavit. Metadata s potřebnými informacemi jsou šifrována pomocí 4096 bitového
 RSA, kde je soukormý klíč šifrován pomocí AES-CBC se 128 bitovým klíčem vyderivovaným ze statického hesla uloženého v
-programu s bitovým posunem.
+programu s bitovým posunem.<br>
+Integrita je zajištěna 3 způsoby. V prvním případě se jedná od ukládání hesel do blockchainu, který je následně
+po načtení databáze přepočítán. Před uložením je také vytvořen otisk databáze pomocí SHA-256 a také CRC součet, které
+jsou po načtení znovu spočítány a porovnány s uloženýmy hodnotami z předchozí relace. Pokud jedna z těchto kontrol
+neprojde, uživatel je o kompromitaci databáze informován.<br>
+V případě použití AES šifry se k těmto 3 algoritmům přidává také zaručení integrity pomocí GCM módu, který AES
+využívá.
 ## 2. Struktura programu
 Program se spouští ze souboru "password_manager.py" ve které se volá funkce spuštění a běhu GUI v souboru "ui.py".
 Mezi tímto frontendem a samotným backendem stojí "runtime_functions.py", který se chová jako interface mezi těmito
